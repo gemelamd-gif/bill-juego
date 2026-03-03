@@ -1,0 +1,533 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Los que Dios vio — Bill (Mini Juego)</title>
+  <style>
+    :root{
+      --bg:#071021;
+      --panel:#0b1a33;
+      --line:rgba(255,255,255,.12);
+      --text:rgba(255,255,255,.92);
+      --muted:rgba(255,255,255,.64);
+
+      --blue:#58b7ff;
+      --gold:#f6d26f;
+      --white:#ffffff;
+
+      --shadow: 0 18px 45px rgba(0,0,0,.40);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      min-height:100vh;
+      display:grid;
+      place-items:center;
+      background:
+        radial-gradient(900px 520px at 18% 18%, rgba(88,183,255,.18), transparent 60%),
+        radial-gradient(900px 520px at 82% 82%, rgba(246,210,111,.16), transparent 60%),
+        var(--bg);
+      color:var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+    .wrap{ width:min(980px, 94vw); display:grid; gap:14px; }
+
+    header{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      padding:14px 16px;
+      border:1px solid var(--line);
+      background:linear-gradient(180deg, rgba(11,26,51,.92), rgba(11,26,51,.72));
+      border-radius:16px;
+      box-shadow: var(--shadow);
+    }
+    .brand{display:flex; align-items:center; gap:12px;}
+    .logo{
+      width:40px; height:40px; border-radius:14px; position:relative; overflow:hidden;
+      background: linear-gradient(135deg, rgba(88,183,255,.95), rgba(246,210,111,.9));
+      box-shadow: 0 12px 28px rgba(88,183,255,.18);
+    }
+    .logo:after{
+      content:"";
+      position:absolute; inset:-30%;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.65), transparent 55%);
+      transform: rotate(25deg);
+    }
+    .title{display:grid; gap:2px; line-height:1.1;}
+    .title b{font-size:14px; letter-spacing:.2px;}
+    .title span{font-size:12px; color:var(--muted)}
+
+    .hud{
+      display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; align-items:center;
+      font-size:12px; color:var(--muted);
+    }
+    .pill{
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.04);
+      padding:8px 10px;
+      border-radius:999px;
+      display:flex; gap:8px; align-items:center;
+    }
+    .pill kbd{
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size:11px;
+      padding:2px 6px;
+      border:1px solid rgba(255,255,255,.18);
+      border-bottom-color:rgba(255,255,255,.08);
+      border-radius:8px;
+      color:rgba(255,255,255,.88);
+      background:rgba(0,0,0,.18);
+    }
+
+    .stage{
+      border:1px solid var(--line);
+      background:linear-gradient(180deg, rgba(11,26,51,.72), rgba(11,26,51,.45));
+      border-radius:16px;
+      padding:12px;
+      box-shadow: var(--shadow);
+      position:relative;
+      overflow:hidden;
+    }
+    canvas{
+      width:100%;
+      height:auto;
+      display:block;
+      border-radius:12px;
+      background:
+        radial-gradient(880px 460px at 50% 10%, rgba(88,183,255,.10), transparent 62%),
+        radial-gradient(880px 460px at 50% 95%, rgba(246,210,111,.09), transparent 62%),
+        rgba(4,8,18,.60);
+    }
+
+    /* Burbuja Bill + avatar */
+    .billWrap{
+      position:absolute;
+      right:18px;
+      bottom:18px;
+      display:flex;
+      gap:12px;
+      align-items:flex-end;
+      max-width:min(560px, calc(100% - 36px));
+      pointer-events:none;
+    }
+    .billAvatar{
+      width:92px;
+      height:92px;
+      border-radius:999px;
+      border:3px solid rgba(246,210,111,.8);
+      background: #0b1a33;
+      box-shadow: 0 16px 30px rgba(0,0,0,.45);
+      overflow:hidden;
+      position:relative;
+      flex:0 0 auto;
+    }
+    .billAvatar img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      transform: scale(1.12);
+      transform-origin: 55% 35%;
+      display:block;
+      filter: saturate(1.05) contrast(1.03);
+    }
+    .billBubble{
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(6,10,24,.62);
+      backdrop-filter: blur(6px);
+      border-radius:16px;
+      padding:10px 12px;
+      box-shadow: 0 16px 30px rgba(0,0,0,.38);
+      pointer-events:none;
+      line-height:1.35;
+    }
+    .billBubble b{color:var(--gold)}
+    .billMeta{font-size:11px; color:rgba(255,255,255,.60); margin-top:4px;}
+    .ctaRow{
+      margin-top:8px;
+      display:flex; gap:8px; flex-wrap:wrap;
+      pointer-events:auto;
+    }
+    .ctaBtn{
+      cursor:pointer;
+      border:1px solid rgba(246,210,111,.40);
+      background: linear-gradient(135deg, rgba(246,210,111,.22), rgba(88,183,255,.16));
+      color:rgba(255,255,255,.92);
+      padding:8px 10px;
+      border-radius:12px;
+      font-weight:800;
+      font-size:12px;
+    }
+    .ctaBtn:hover{filter:brightness(1.05)}
+    .ctaBtn.secondary{
+      border:1px solid rgba(255,255,255,.16);
+      background:rgba(255,255,255,.06);
+      font-weight:700;
+    }
+
+    .overlay{
+      position:absolute; inset:12px;
+      display:grid; place-items:center;
+      opacity:1;
+      transition:.18s ease;
+    }
+    .overlay.hide{opacity:0; pointer-events:none}
+    .card{
+      width:min(560px, 92%);
+      padding:16px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(6,10,24,.76);
+      box-shadow: 0 18px 45px rgba(0,0,0,.50);
+      text-align:center;
+    }
+    .card h2{ margin:0 0 6px; font-size:16px; }
+    .card p{ margin:0 0 12px; font-size:13px; color:var(--muted); }
+    .btnrow{display:flex; gap:10px; justify-content:center; flex-wrap:wrap;}
+    .btn{
+      cursor:pointer;
+      border:1px solid rgba(255,255,255,.16);
+      background:rgba(255,255,255,.06);
+      color:rgba(255,255,255,.92);
+      padding:10px 12px;
+      border-radius:12px;
+      font-weight:800;
+      font-size:13px;
+    }
+    .btn.primary{
+      border-color: rgba(246,210,111,.40);
+      background: linear-gradient(135deg, rgba(246,210,111,.22), rgba(88,183,255,.16));
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div class="title">
+          <b>Los que Dios vio — Bill</b>
+          <span>Mini juego emocional (azul · blanco · dorado)</span>
+        </div>
+      </div>
+      <div class="hud">
+        <div class="pill">Mover: <kbd>Mouse</kbd> o <kbd>↑</kbd><kbd>↓</kbd></div>
+        <div class="pill">Pausa: <kbd>Espacio</kbd></div>
+        <div class="pill">Reiniciar: <kbd>R</kbd></div>
+      </div>
+    </header>
+
+    <div class="stage">
+      <canvas id="game" width="960" height="540"></canvas>
+
+      <div id="overlay" class="overlay">
+        <div class="card">
+          <h2>Listo</h2>
+          <p>Bill te acompaña con calma y enfoque. Controla la paleta izquierda.</p>
+          <div class="btnrow">
+            <button class="btn primary" id="startBtn">Iniciar</button>
+            <button class="btn" id="resetBtn">Reiniciar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="billWrap">
+        <div class="billBubble" aria-live="polite">
+          <div id="billLine"><b>Bill:</b> Respira. Mira el centro… y juega a tu ritmo.</div>
+          <div class="billMeta" id="billMeta">Nivel: 1 · Enfoque</div>
+          <div class="ctaRow">
+            <button class="ctaBtn" id="ctaBtn">Ver libros</button>
+            <button class="ctaBtn secondary" id="pauseBtn">Pausar</button>
+          </div>
+        </div>
+
+        <div class="billAvatar" title="Bill">
+          <img id="billImg" alt="Bill" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  // === CAMBIA ESTO ===
+  const BILL_IMG = "PEGA_AQUI_LA_URL_DE_LA_IMAGEN_DE_BILL";
+  const CTA_URL  = "PEGA_AQUI_TU_LINK_REAL"; // web, tienda, colección, etc.
+  // ====================
+
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d");
+  const W = canvas.width, H = canvas.height;
+
+  const overlay = document.getElementById("overlay");
+  const startBtn = document.getElementById("startBtn");
+  const resetBtn = document.getElementById("resetBtn");
+  const pauseBtn = document.getElementById("pauseBtn");
+  const ctaBtn = document.getElementById("ctaBtn");
+
+  const billImg = document.getElementById("billImg");
+  const billLine = document.getElementById("billLine");
+  const billMeta = document.getElementById("billMeta");
+
+  billImg.src = BILL_IMG;
+
+  const paddle = { w: 14, h: 110, margin: 24, speed: 560 };
+  const ballCfg = { r: 8, baseSpeed: 420, maxSpeed: 920, speedGain: 1.05 };
+
+  const LEVELS = [
+    { name:"Enfoque",       aiReaction:0.13, aiMax:480, ballStart:420,
+      msg:"Respira. Mira el centro… y juega a tu ritmo." },
+    { name:"Confianza",     aiReaction:0.15, aiMax:520, ballStart:460,
+      msg:"Si te equivocas, no pasa nada. Vuelve al centro." },
+    { name:"Paciencia",     aiReaction:0.17, aiMax:560, ballStart:500,
+      msg:"La calma también es fuerza. Controla el ritmo." },
+    { name:"Valentía",      aiReaction:0.19, aiMax:600, ballStart:540,
+      msg:"No necesitas perfecto. Solo seguir." },
+    { name:"Perseverancia", aiReaction:0.21, aiMax:650, ballStart:580,
+      msg:"Un punto a la vez. Tú puedes." },
+  ];
+
+  const state = {
+    running:true, paused:true, lastTs:0,
+    leftScore:0, rightScore:0, levelIndex:0, rally:0
+  };
+
+  const left = { x:paddle.margin, y:(H-paddle.h)/2, vy:0 };
+  const right= { x:W-paddle.margin-paddle.w, y:(H-paddle.h)/2, vy:0 };
+  const ball = { x:W/2, y:H/2, vx:0, vy:0, speed:ballCfg.baseSpeed };
+
+  let mouseY = left.y + paddle.h/2;
+  let useMouse = true;
+  const keys = { up:false, down:false };
+
+  const COLORS = {
+    blue:"rgba(88,183,255,.95)",
+    gold:"rgba(246,210,111,.95)",
+    white:"rgba(255,255,255,.95)",
+    whiteSoft:"rgba(255,255,255,.20)"
+  };
+
+  function clamp(v,min,max){ return Math.max(min, Math.min(max,v)); }
+
+  function sayBill(text){ billLine.innerHTML = `<b>Bill:</b> ${text}`; }
+  function currentLevel(){ return LEVELS[state.levelIndex]; }
+  function applyLevel(){
+    const lvl = currentLevel();
+    ballCfg.baseSpeed = lvl.ballStart;
+    billMeta.textContent = `Nivel: ${state.levelIndex+1} · ${lvl.name}`;
+    sayBill(lvl.msg);
+  }
+
+  function resetBall(servesToRight=true){
+    ball.x=W/2; ball.y=H/2; ball.speed=ballCfg.baseSpeed;
+    const dir = servesToRight ? 1 : -1;
+    const angle = (Math.random()*0.8 - 0.4);
+    ball.vx = Math.cos(angle)*ball.speed*dir;
+    ball.vy = Math.sin(angle)*ball.speed;
+    state.rally=0;
+  }
+
+  function rectCircleCollide(px,py,pw,ph,cx,cy,cr){
+    const closestX = clamp(cx, px, px+pw);
+    const closestY = clamp(cy, py, py+ph);
+    const dx = cx-closestX, dy = cy-closestY;
+    return (dx*dx + dy*dy) <= cr*cr;
+  }
+
+  function bounceFromPaddle(p){
+    const center = p.y + paddle.h/2;
+    const dist = (ball.y - center) / (paddle.h/2);
+    const maxAngle = 1.05;
+    const angle = dist * maxAngle;
+
+    ball.speed = Math.min(ball.speed * ballCfg.speedGain, ballCfg.maxSpeed);
+    const dir = (p===left) ? 1 : -1;
+    ball.vx = Math.cos(angle)*ball.speed*dir;
+    ball.vy = Math.sin(angle)*ball.speed;
+
+    if (p===left) ball.x = left.x + paddle.w + ballCfg.r + 0.5;
+    else ball.x = right.x - ballCfg.r - 0.5;
+
+    state.rally++;
+    if (state.rally===3)  sayBill("Bien. Ritmo estable.");
+    if (state.rally===6)  sayBill("Excelente. Mantén el centro.");
+    if (state.rally===10) sayBill("¡Wow! Eso es perseverancia.");
+  }
+
+  function maybeLevelUp(){
+    const thresholds = [2,4,6,8];
+    if (state.levelIndex < LEVELS.length-1 && thresholds[state.levelIndex] !== undefined){
+      if (state.leftScore >= thresholds[state.levelIndex]){
+        state.levelIndex++;
+        applyLevel();
+      }
+    }
+  }
+
+  function drawRoundedRect(x,y,w,h,r,fill){
+    ctx.save(); ctx.fillStyle=fill;
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.arcTo(x+w,y,x+w,y+h,r);
+    ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r);
+    ctx.arcTo(x,y,x+w,y,r);
+    ctx.closePath(); ctx.fill(); ctx.restore();
+  }
+
+  function update(dt){
+    // jugador
+    if (useMouse){
+      const targetY = mouseY - paddle.h/2;
+      left.y += (targetY - left.y) * 0.35;
+    } else {
+      left.vy=0;
+      if (keys.up) left.vy=-paddle.speed;
+      if (keys.down) left.vy=paddle.speed;
+      left.y += left.vy*dt;
+    }
+    left.y = clamp(left.y, 0, H-paddle.h);
+
+    // IA
+    const lvl = currentLevel();
+    const target = ball.y - paddle.h/2;
+    const diff = target - right.y;
+    let step = diff * lvl.aiReaction;
+    if (Math.abs(diff) < 22) step = 0;
+    step = clamp(step, -lvl.aiMax*dt, lvl.aiMax*dt);
+    right.y += step;
+    right.y = clamp(right.y, 0, H-paddle.h);
+
+    // bola
+    ball.x += ball.vx*dt;
+    ball.y += ball.vy*dt;
+
+    // paredes
+    if (ball.y - ballCfg.r <= 0){ ball.y=ballCfg.r; ball.vy*=-1; }
+    if (ball.y + ballCfg.r >= H){ ball.y=H-ballCfg.r; ball.vy*=-1; }
+
+    // paletas
+    if (ball.vx < 0 && rectCircleCollide(left.x,left.y,paddle.w,paddle.h,ball.x,ball.y,ballCfg.r)) bounceFromPaddle(left);
+    if (ball.vx > 0 && rectCircleCollide(right.x,right.y,paddle.w,paddle.h,ball.x,ball.y,ballCfg.r)) bounceFromPaddle(right);
+
+    // puntos
+    if (ball.x + ballCfg.r < 0){
+      state.rightScore++;
+      sayBill("No pasa nada. Respira… y vuelve a intentarlo.");
+      resetBall(false);
+    } else if (ball.x - ballCfg.r > W){
+      state.leftScore++;
+      sayBill("¡Bien! Ese punto fue tuyo. Mantén el ritmo.");
+      maybeLevelUp();
+      resetBall(true);
+    }
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+
+    // línea central
+    ctx.save();
+    ctx.strokeStyle = COLORS.whiteSoft;
+    ctx.lineWidth=2;
+    ctx.setLineDash([10,10]);
+    ctx.beginPath();
+    ctx.moveTo(W/2,18);
+    ctx.lineTo(W/2,H-18);
+    ctx.stroke();
+    ctx.restore();
+
+    // paletas
+    drawRoundedRect(left.x,left.y,paddle.w,paddle.h,8,COLORS.blue);
+    drawRoundedRect(right.x,right.y,paddle.w,paddle.h,8,COLORS.gold);
+
+    // bola
+    ctx.beginPath();
+    ctx.fillStyle = COLORS.white;
+    ctx.arc(ball.x, ball.y, ballCfg.r, 0, Math.PI*2);
+    ctx.fill();
+
+    // marcador
+    ctx.save();
+    ctx.font="800 46px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+    ctx.textAlign="center";
+    ctx.fillStyle="rgba(255,255,255,.20)";
+    ctx.fillText(String(state.leftScore), W/2-90, 70);
+    ctx.fillText(String(state.rightScore), W/2+90, 70);
+    ctx.restore();
+
+    // nivel
+    ctx.save();
+    ctx.font="800 13px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+    ctx.textAlign="center";
+    ctx.fillStyle="rgba(246,210,111,.70)";
+    ctx.fillText(`Bill · ${currentLevel().name}`, W/2, 24);
+    ctx.restore();
+  }
+
+  function loop(ts){
+    if (state.paused) return;
+    const dt = Math.min((ts - state.lastTs)/1000, 0.033);
+    state.lastTs = ts;
+    update(dt);
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  // eventos
+  canvas.addEventListener("mousemove",(e)=>{
+    const rect = canvas.getBoundingClientRect();
+    mouseY = (e.clientY - rect.top) * (canvas.height / rect.height);
+    useMouse = true;
+  });
+
+  window.addEventListener("keydown",(e)=>{
+    if (e.key==="ArrowUp"){ keys.up=true; useMouse=false; }
+    if (e.key==="ArrowDown"){ keys.down=true; useMouse=false; }
+    if (e.key===" "){
+      e.preventDefault();
+      state.paused = !state.paused;
+      if (!state.paused){ overlay.classList.add("hide"); state.lastTs=performance.now(); requestAnimationFrame(loop); }
+      else overlay.classList.remove("hide");
+    }
+    if (e.key.toLowerCase()==="r") reset();
+  });
+
+  window.addEventListener("keyup",(e)=>{
+    if (e.key==="ArrowUp") keys.up=false;
+    if (e.key==="ArrowDown") keys.down=false;
+  });
+
+  function start(){
+    state.paused=false;
+    overlay.classList.add("hide");
+    state.lastTs=performance.now();
+    requestAnimationFrame(loop);
+  }
+
+  function reset(){
+    state.leftScore=0; state.rightScore=0; state.levelIndex=0; state.rally=0;
+    left.y=(H-paddle.h)/2; right.y=(H-paddle.h)/2;
+    applyLevel();
+    resetBall(true);
+    state.paused=true;
+    overlay.classList.remove("hide");
+  }
+
+  startBtn.addEventListener("click", start);
+  resetBtn.addEventListener("click", reset);
+  pauseBtn.addEventListener("click", ()=>{
+    state.paused = !state.paused;
+    if (!state.paused){ overlay.classList.add("hide"); state.lastTs=performance.now(); requestAnimationFrame(loop); }
+    else overlay.classList.remove("hide");
+  });
+
+  ctaBtn.addEventListener("click", ()=> window.open(CTA_URL, "_blank"));
+
+  // init
+  applyLevel();
+  resetBall(true);
+  draw();
+})();
+</script>
+</body>
+</html>
